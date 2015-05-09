@@ -1,21 +1,14 @@
 package com.example.android.shunshine.app;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.preference.PreferenceManager;
+import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -26,7 +19,7 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+                    .add(R.id.container, new ForecastFragment())
                     .commit();
         }
     }
@@ -48,53 +41,49 @@ public class MainActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent= new Intent(getApplicationContext(),SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        }
+
+        if (id == R.id.action_map) {
+            openPreferedLocationInMap();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
+    private void openPreferedLocationInMap() {
+        SharedPreferences sharedPrefs =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        String location = sharedPrefs.getString(
+                getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+
+        // Using the URI scheme for showing a location found on a map.  This super-handy
+        // intent can is detailed in the "Common Intents" page of Android's developer site:
+        // http://developer.android.com/guide/components/intents-common.html#Maps
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon()
+                .appendQueryParameter("q", location)
+                .build();
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            Log.d("haha", "Couldn't call " + location + ", no receiving apps installed!");
+        }
+    }
+
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class PlaceholderFragment extends Fragment {
-
-        public PlaceholderFragment() {
-        }
-
-        ArrayAdapter<String> mAdapterForcast;
 
 
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-
-               String[] data = {
-                        "MOn 6/23 - sunny - 31/17",
-                        "Tue 6/24 - sunny - 21/17",
-                        "Wed 6/25 - cloudy - 57/17",
-                        "Thurs 6/26 - sunny - 31/17",
-                        "Fry 6/27 - cloudy - 38/17",
-                        "Sat 6/28 - sunny - 78/17",
-                        "Sun 6/29 - Trapped - 37/17"
-            };
-
-            List<String> WeekForecast = new ArrayList<String>(Arrays.asList(data));
-
-            mAdapterForcast = new ArrayAdapter<String>(
-                    getActivity(), //id activity
-                    R.layout.list_item_forecast, //id layout
-                    R.id.list_item_forecast_textview, // ID text view
-                    WeekForecast //list data
-
-            );
-
-            ListView listView =(ListView) rootView.findViewById(R.id.listview_forecast);
-            listView.setAdapter(mAdapterForcast);
-            return rootView;
 
 
-        }
     }
-}
+

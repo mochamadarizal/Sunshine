@@ -1,7 +1,10 @@
 package com.example.android.shunshine.app;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -11,6 +14,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -43,6 +47,26 @@ import java.util.List;
         setHasOptionsMenu(true);
 
     }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        UpdateWeather();
+    }
+
+
+    public void UpdateWeather(){
+
+        fetchWeatherTask weaterTask = new fetchWeatherTask();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = prefs.getString(getString(R.string.pref_location_key), getString(R.string.pref_location_default));
+        weaterTask.execute(location);
+
+
+    }
+
+
+
     @Override
     public void onCreateOptionsMenu(Menu menu,MenuInflater inflater){
         inflater.inflate(R.menu.forecastfragment, menu);
@@ -51,7 +75,11 @@ import java.util.List;
     public  boolean onOptionsItemSelected(MenuItem item){
         int id = item.getItemId();
         if(id == R.id.action_refresh){
-            new fetchWeatherTask().execute("94043");// inputan buat manggil dengan parameter. kalo mau dua parameter tinggal kasih koma, masukin stringya lagii
+            fetchWeatherTask weaterTask = new fetchWeatherTask();
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String location = prefs.getString(getString(R.string.pref_location_key), getString(R.string.pref_location_default));
+            weaterTask.execute(location);
+
             return true;
            }
         return super.onOptionsItemSelected(item);
@@ -99,6 +127,18 @@ import java.util.List;
         listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
 
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String forecast = mForecastAdapter.getItem(position);
+                Intent intent = new Intent(getActivity(), DetailActivity.class);
+                intent.putExtra(Intent.EXTRA_TEXT, forecast);
+                startActivity(intent);
+            }
+        });
+
+
+
 
         return rootView;
 
@@ -119,7 +159,15 @@ import java.util.List;
         /**
          * Prepare the weather high/lows for presentation.
          */
-        private String formatHighLows(double high, double low) {
+        private String formatHighLows(double high, double low, String unitType) {
+
+            if (unitType.equals(getString(R.string.pref_units_imperial))) {
+                high = (high * 1.8) + 32;
+                low = (low * 1.8) + 32;
+            } else if (!unitType.equals(getString(R.string.pref_units_metric))) {
+                Log.d("haha", "Unit type not found: " + unitType);
+            }
+
             // For presentation, assume the user doesn't care about tenths of a degree.
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
@@ -167,6 +215,10 @@ import java.util.List;
             dayTime = new Time();
 
             String[] resultStrs = new String[numDays];
+            SharedPreferences sharePrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitType = sharePrefs.getString(getString(R.string.pref_units_key),getString(R.string.pref_units_metric));
+
+
             for(int i = 0; i < weatherArray.length(); i++) {
                 // For now, using the format "Day, description, hi/low"
                 String day;
@@ -194,7 +246,7 @@ import java.util.List;
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
-                highAndLow = formatHighLows(high, low);
+                highAndLow = formatHighLows(high, low,unitType);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
 

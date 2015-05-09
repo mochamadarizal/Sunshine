@@ -6,10 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
 
-    android:minHeight="100dp"
+    android:minHeight="60dp"
     android:textSize="30dp"
-    android:textColor="#ff3447ff"
-    android:textAlignment="center">
+    android:textColor="#ff000000"
+    android:textAlignment="center"
+    android:visibility="visible"
+    android:typeface="serif"
+    android:textStyle="normal">
 
 
 </TextView>
